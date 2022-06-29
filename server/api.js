@@ -33,119 +33,137 @@ module.exports = function (app, db) {
 
     }
 
-    /**
-     * 
-     * @param {*} username - username from logged in user
-     * @return {Object} - user data
-     */
-    async function getUserByUsername(username) {
-        return await db.oneOrNone(`SELECT * from users WHERE username = $1`, [username]);
-    }
-
     app.post('/api/register', async function (req, res, next) {
+        try {
+            const { username } = req.body;
+            const { password } = req.body;
+            const { firstName } = req.body
+            const { lastName } = req.body
+            console.log(username);
+            let checkDuplicate = await db.manyOrNone(`SELECT * from users WHERE username = $1`, [username]);
+            bcrypt.genSalt(saltRounds, async function (err, salt) {
+                bcrypt.hash(password, salt, async function (err, hash) {
+                    // Store hash in your password DB.
+                    if (checkDuplicate.length < 1) {
+                        await db.none(`insert into users (username, password, first_name, last_name) values ($1, $2, $3, $4)`, [username, hash, firstName, lastName])
+                        res.json({
+                            message: 'success'
+                        });
+                    } else {
+                        res.json({
+                            message: 'duplicate'
+                        });
+                    }
+                });
+            });
+        } catch (err) {
+            console.log(err);
+            next()
+        }
 
-        const { username } = req.body;
-        const { password } = req.body;
-        const { firstName } = req.body
-        const { lastName } = req.body
+    })
+    app.post('/api/login', async function (req, res, next) {
+        try {
+            const { username } = req.body;
+            const { password } = req.body;
+            const token = jwt.sign({
+                username
+            }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '4hr' });
+            let checkUser = await db.manyOrNone(`SELECT id from users WHERE username = $1`, [username]);
+            if (checkUser.length < 1) {
+                res.json({
+                    token,
+                    message: 'unregistered'
+                });
+            } else {
 
-        let checkDuplicate = await db.manyOrNone(`SELECT id from users WHERE username = $1`, [username]);
-        bcrypt.genSalt(saltRounds, async function (err, salt) {
-            bcrypt.hash(password, salt, async function (err, hash) {
-                // Store hash in your password DB.
-                if (checkDuplicate.length < 1) {
-                    await db.none(`insert into users (username, password, first_name, last_name) values ($1, $2, $3, $4)`, [username, hash, firstName, lastName])
+                let checkPassword = await db.oneOrNone(`SELECT password from users WHERE username = $1`, [username]);
+
+                const match = await bcrypt.compare(password, checkPassword.password);
+
+                if (match) {
                     res.json({
+                        token,
                         message: 'success'
                     });
                 } else {
                     res.json({
-                        message: 'duplicate'
+                        token,
+                        message: 'unmatched'
                     });
                 }
-            });
-        });
+            }
+        } catch (err) {
+            console.log(err);
+            next()
+        }
+    });
 
-    })
-    app.post('/api/login', async function (req, res, next) {
+    app.get('/api/playlist/:username', verifyToken, async function (req, res, next) {
+        try {
+            const username = req.params.username
 
-        const { username } = req.body;
-        const { password } = req.body;
-        const token = jwt.sign({
-            username
-        }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '4hr' });
-        let checkUser = await db.manyOrNone(`SELECT id from users WHERE username = $1`, [username]);
-        if (checkUser.length < 1) {
+            const { id } = await db.oneOrNone(`select id from users where username = $1`, [username])
+            const userInfo = await db.manyOrNone(`select * from users where username = $1`, [username])
+            const userPlaylist = await db.manyOrNone(`SELECT * from movies WHERE user_id = $1`, [id]);
             res.json({
-                token,
-                message: 'unregistered'
-            });
-        } else {
+                data: userPlaylist,
+                user: userInfo
+            })
 
-            let checkPassword = await db.oneOrNone(`SELECT password from users WHERE username = $1`, [username]);
+        } catch (err) {
+            console.log(err);
+            next()
+        }
+    });
 
-            const match = await bcrypt.compare(password, checkPassword.password);
+    app.post('/api/playlist/:username', async function (req, res, next) {
+        try {
+            const username = req.params.username
+            const { movieName } = req.body
+            const { movieImg } = req.body
+         
+            const { id } = await db.oneOrNone(`SELECT id from users WHERE username = $1`, [username]);
+           
+            let checkUser = await db.manyOrNone(`SELECT * from movies WHERE user_id = $1 and movie_name = $2 and movie_img = $3`, [id, movieName, movieImg]);
+            if (checkUser.length < 1) {
+                await db.none(`insert into movies (movie_name, movie_img, user_id) values ($1, $2, $3)`, [movieName, movieImg, id])
 
-            if (match) {
                 res.json({
-                    token,
                     message: 'success'
                 });
             } else {
                 res.json({
-                    token,
-                    message: 'unmatched'
+                    message: 'duplicate'
                 });
             }
-        }
-    });
-
-    app.get('/api/playlist/:username', verifyToken, async function (req, res) {
-
-        const username = req.params.username
-        const { id } = await db.one(`select id from users where username = $1`, [username])
-        const userPlaylist = await db.manyOrNone(`SELECT * from movies WHERE user_id = $1`, [id]);
-        res.json({
-            data: userPlaylist
-        })
-    });
-
-    app.post('/api/playlist/:username', async function (req, res, next) {
-
-        const username = req.params.username
-        const { movieName } = req.body
-        const { movieImg } = req.body
-
-        const { id } = await db.oneOrNone(`SELECT id from users WHERE username = $1`, [username]);
-
-        let checkUser = await db.manyOrNone(`SELECT * from movies WHERE user_id = $1 and movie_name = $2`, [id]);
-        if (checkUser.length < 1) {
-            await db.none(`insert into movies (movie_name, movie_img, user_id) values ($1, $2, $3)`, [movieName, movieImg, id])
-
-            res.json({
-                message: 'success'
-            });
-        } else {
-            res.json({
-                message: 'duplicate'
-            });
-        }
-    });
-    app.delete('/api/playlist/:username', async function (req, res) {
-
-        const username = req.params.username
-        const movieName = req.body
-        try {
-            const { id } = await db.one(`select id from users where username = $1`, [username])
-            await db.none(`delete from movies WHERE user_id = $1 and movie_name = $2`, [id, movieName]);
-            res.json({
-                status: 'success'
-            })
         } catch (err) {
-            res.json({
-                status: 'success',
-                error: err.stack
-            })
+            console.log(err);
+            next()
+        }
+    });
+    app.delete('/api/playlist', async function (req, res, next) {
+        try {
+
+
+            const username = req.query.username
+            const movieName = req.query.movieName
+
+            try {
+                const { id } = await db.one(`select id from users where username = $1`, [username])
+                await db.none(`delete from movies WHERE user_id = $1 and movie_name = $2`, [id, movieName]);
+                res.json({
+                    status: 'success'
+                })
+            } catch (err) {
+                res.json({
+                    status: 'success',
+                    error: err.stack
+                })
+            }
+        } catch (err) {
+            console.log(err);
+            next()
         }
     });
 
