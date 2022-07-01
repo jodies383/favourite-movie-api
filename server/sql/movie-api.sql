@@ -5,10 +5,10 @@ create table users(
 	first_name text,
     last_name text
 );
-create table movies(
+
+create table playlist(
 	id serial not null primary key,
 	user_id int,
-	movie_name text,
-	movie_img text,
+	movie_id int,
     foreign key (user_id) references users(id)
 );

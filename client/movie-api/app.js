@@ -32,15 +32,34 @@ export function MovieApi() {
                 axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
                 const username = localStorage.getItem('username')
                 axios
-                    .get(`${URL_BASE}/api/playlist/${username}`, { withCredentials: true, })
+                    .get(`https://api.themoviedb.org/3/movie/popular?api_key=511ebf4540231b1f06e7bec72f6b4a05&language=en-US&page=1`)
                     .then((result) => {
-                        this.myMovies = result.data.data
+                        const results = result.data.results
+                            this.searchResults = results
+                            this.movieSearch = true
+                            this.searchResLength = 'Trending movies'
+                           
+                    })
+                axios
+                    .get(`${URL_BASE}/api/playlist/${username}`)
+                    .then(async (result) => {
+                        this.userInfo = result.data.user
+                        let res = result.data.playlist
+                        const movies = res.map(element => {
+                            return axios
+                                .get(`https://api.themoviedb.org/3/movie/${element.movie_id}?api_key=511ebf4540231b1f06e7bec72f6b4a05`)
+                                .then((result) => {
+                                   
+                                    return result.data
+                                }).catch(e => console.log(e))
+
+                        });
+                        this.myMovies = await Promise.all(movies)
                     });
             }
         },
         logout() {
             localStorage.clear()
-       
             this.logoutBtn = false
             this.registerInput = false
             this.loginInput = true
@@ -56,8 +75,8 @@ export function MovieApi() {
             this.loginInput = true
             this.registerInput = false
         },
-        hidePlaylist(){
-            this.playlist = ! this.playlist
+        hidePlaylist() {
+            this.playlist = !this.playlist
         },
         register() {
             if (this.username !== '') {
@@ -87,8 +106,7 @@ export function MovieApi() {
             this.loginPassword = ''
         },
         login() {
-            this.user = localStorage.getItem('username')
-            axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
+            // axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
             axios
                 .post(`${URL_BASE}/api/login`, { username: this.loginUsername, password: this.loginPassword })
                 .then((result) => {
@@ -103,23 +121,36 @@ export function MovieApi() {
                         this.loginUsername = ''
                         this.loginPassword = ''
                     } else {
-                        localStorage.setItem('username', this.loginUsername);
-                        const { token } = result.data;
-                        localStorage.setItem('token', token);
-                        axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-
                         const results = result.data
                         if (results.message == 'success') {
+                            const { token } = result.data;
+                            localStorage.setItem('username', this.loginUsername);
+                            localStorage.setItem('token', token);
+
                             this.mainContent = true
                             this.registerInput = false
                             this.loginInput = false
                             this.logoutBtn = true
 
+                            this.user = localStorage.getItem('username')
+                            axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
                             axios
-                                .get(`${URL_BASE}/api/playlist/${this.loginUsername}`)
-                                .then((result) => {
-                                    this.myMovies = result.data.data
+                                .get(`${URL_BASE}/api/playlist/${username}`)
+                                .then(async (result) => {
+                                    this.userInfo = result.data.user
+                                    let res = result.data.playlist
+                                    const movies = res.map(element => {
+                                        return axios
+                                            .get(`https://api.themoviedb.org/3/movie/${element.movie_id}?api_key=511ebf4540231b1f06e7bec72f6b4a05`)
+                                            .then((result) => {
+                                                console.log(result.data);
+                                                return result.data
+                                            }).catch(e => console.log(e))
+
+                                    });
+                                    this.myMovies = await Promise.all(movies)
                                 });
+
                             this.successMessage = true,
                                 this.$refs.successMessage.innerText = 'login successful'
                         }
@@ -137,36 +168,48 @@ export function MovieApi() {
                 .get(`https://api.themoviedb.org/3/search/movie?api_key=511ebf4540231b1f06e7bec72f6b4a05&query=${this.searchInput}`)
                 .then((result) => {
                     const results = result.data.results
-                    if (results.length < 1){
+                    if (results.length < 1) {
                         this.errorMessage = true,
-                        this.$refs.errorMessage.innerText = 'no movies found'
+                            this.$refs.errorMessage.innerText = 'no movies found'
                     } else {
                         this.searchResults = results
                         this.movieSearch = true
-                        this.searchInput = ''
-                        this.searchResLength = results.length
+                        this.searchResLength = `${results.length} results`
                     }
                 })
-                setTimeout(() => { this.errorMessage = false }, 2000);
+            setTimeout(() => { this.errorMessage = false }, 2000);
         },
         displayFavourites() {
             const username = localStorage.getItem('username')
             axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-            axios
-                .get(`${URL_BASE}/api/playlist/${username}`)
-                .then((result) => {
-                    if (result.data.message == 'expired') {
-                        if (localStorage.getItem('token')) {
-                            this.logout()
-                            this.errorMessage = true,
-                                this.$refs.errorMessage.innerText = 'session expired, please log in again'
+            if (localStorage.getItem('token')) {
+                console.log('token found');
+                axios
+                    .get(`${URL_BASE}/api/playlist/${username}`)
+                    .then(async (result) => {
+                        if (result.data.message == 'expired') {
+                            if (localStorage.getItem('token')) {
+                                this.logout()
+                                this.errorMessage = true,
+                                    this.$refs.errorMessage.innerText = 'session expired, please log in again'
+                            }
                         }
-                    }
-                    else {
-                        this.myMovies = result.data.data
-                        this.userInfo = result.data.user
-                    }
-                });
+                        else {
+                            this.userInfo = result.data.user
+                            let res = result.data.playlist
+                            const movies = res.map(element => {
+                                return axios
+                                    .get(`https://api.themoviedb.org/3/movie/${element.movie_id}?api_key=511ebf4540231b1f06e7bec72f6b4a05`)
+                                    .then((result) => {
+                                        console.log(result.data);
+                                        return result.data
+                                    }).catch(e => console.log(e))
+
+                            });
+                            this.myMovies = await Promise.all(movies)
+                        }
+                    });
+            }
 
             setTimeout(() => { this.errorMessage = false }, 2000);
         },
@@ -174,38 +217,61 @@ export function MovieApi() {
             const username = localStorage.getItem('username')
             axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
             axios
-                .delete(`${URL_BASE}/api/playlist?username=${username}&movieName=${movie}`)
+                .delete(`${URL_BASE}/api/playlist?username=${username}&movie_id=${movie}`)
                 .then((result) => {
                     axios
                         .get(`${URL_BASE}/api/playlist/${username}`)
-                        .then((result) => {
-                            this.myMovies = result.data.data
+                        .then(async (result) => {
+                            this.userInfo = result.data.user
+                            let res = result.data.playlist
+                            const movies = res.map(element => {
+                                return axios
+                                    .get(`https://api.themoviedb.org/3/movie/${element.movie_id}?api_key=511ebf4540231b1f06e7bec72f6b4a05`)
+                                    .then((result) => {
+                                        console.log(result.data);
+                                        return result.data
+                                    }).catch(e => console.log(e))
+
+                            });
+                            this.myMovies = await Promise.all(movies)
+
                             this.successMessage = true,
-                            this.$refs.successMessage.innerText = 'removed from favourites'
+                                this.$refs.successMessage.innerText = 'removed from favourites'
                         });
                 });
 
             setTimeout(() => { this.successMessage = false }, 2000);
             setTimeout(() => { this.errorMessage = false }, 2000);
         },
-        addToFavourites(movie, poster) {
+        addToFavourites(id) {
             const username = localStorage.getItem('username')
             axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
             axios
-                .post(`${URL_BASE}/api/playlist/${username}`, { movieName: movie, movieImg: poster })
+                .post(`${URL_BASE}/api/playlist/${username}`, { movieId: id })
                 .then((result) => {
-                    if (result.data.message == 'success'){
-                    axios
-                        .get(`${URL_BASE}/api/playlist/${username}`)
-                        .then((result) => {
-                                this.myMovies = result.data.data
+                    if (result.data.message == 'success') {
+                        axios
+                            .get(`${URL_BASE}/api/playlist/${username}`)
+                            .then(async (result) => {
+                                this.userInfo = result.data.user
+                                let res = result.data.playlist
+                                const movies = res.map(element => {
+                                    return axios
+                                        .get(`https://api.themoviedb.org/3/movie/${element.movie_id}?api_key=511ebf4540231b1f06e7bec72f6b4a05`)
+                                        .then((result) => {
+                                            console.log(result.data);
+                                            return result.data
+                                        }).catch(e => console.log(e))
+
+                                });
                                 this.successMessage = true,
-                                this.$refs.successMessage.innerText = 'added to favourites'
+                                    this.$refs.successMessage.innerText = 'added to favourites'
+                                this.myMovies = await Promise.all(movies)
                             });
-                        } else if (result.data.message == 'duplicate') {
-                            this.errorMessage = true,
+                    } else if (result.data.message == 'duplicate') {
+                        this.errorMessage = true,
                             this.$refs.errorMessage.innerText = 'this movie is already in your favourites'
-                        }
+                    }
                 });
             setTimeout(() => { this.successMessage = false }, 2000);
             setTimeout(() => { this.errorMessage = false }, 2000);

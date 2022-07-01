@@ -102,14 +102,17 @@ module.exports = function (app, db) {
     app.get('/api/playlist/:username', verifyToken, async function (req, res, next) {
         try {
             const username = req.params.username
+           
 
-            const { id } = await db.oneOrNone(`select id from users where username = $1`, [username])
-            const userInfo = await db.manyOrNone(`select * from users where username = $1`, [username])
-            const userPlaylist = await db.manyOrNone(`SELECT * from movies WHERE user_id = $1`, [id]);
-            res.json({
-                data: userPlaylist,
-                user: userInfo
-            })
+                const { id } = await db.oneOrNone(`select id from users where username = $1`, [username])
+                const userInfo = await db.manyOrNone(`select * from users where username = $1`, [username])
+                const playlist = await db.manyOrNone(`SELECT * from playlist WHERE user_id = $1`, [id]);
+                console.log(playlist);
+                res.json({
+                    user: userInfo,
+                    playlist
+                })
+            
 
         } catch (err) {
             console.log(err);
@@ -120,14 +123,14 @@ module.exports = function (app, db) {
     app.post('/api/playlist/:username', async function (req, res, next) {
         try {
             const username = req.params.username
-            const { movieName } = req.body
-            const { movieImg } = req.body
+            const {movieId} = req.body
+      
          
             const { id } = await db.oneOrNone(`SELECT id from users WHERE username = $1`, [username]);
            
-            let checkUser = await db.manyOrNone(`SELECT * from movies WHERE user_id = $1 and movie_name = $2 and movie_img = $3`, [id, movieName, movieImg]);
+            let checkUser = await db.manyOrNone(`SELECT * from playlist WHERE user_id = $1 and movie_id = $2`, [id, movieId]);
             if (checkUser.length < 1) {
-                await db.none(`insert into movies (movie_name, movie_img, user_id) values ($1, $2, $3)`, [movieName, movieImg, id])
+                await db.none(`insert into playlist (movie_id, user_id) values ($1, $2)`, [movieId, id])
 
                 res.json({
                     message: 'success'
@@ -145,13 +148,12 @@ module.exports = function (app, db) {
     app.delete('/api/playlist', async function (req, res, next) {
         try {
 
-
             const username = req.query.username
-            const movieName = req.query.movieName
+            const movieId = req.query.movie_id
 
             try {
                 const { id } = await db.one(`select id from users where username = $1`, [username])
-                await db.none(`delete from movies WHERE user_id = $1 and movie_name = $2`, [id, movieName]);
+                await db.none(`delete from playlist WHERE user_id = $1 and movie_id = $2`, [id, movieId]);
                 res.json({
                     status: 'success'
                 })
