@@ -39,7 +39,7 @@ module.exports = function (app, db) {
             const { password } = req.body;
             const { firstName } = req.body
             const { lastName } = req.body
-            console.log(username);
+   
             let checkDuplicate = await db.manyOrNone(`SELECT * from users WHERE username = $1`, [username]);
             bcrypt.genSalt(saltRounds, async function (err, salt) {
                 bcrypt.hash(password, salt, async function (err, hash) {
@@ -107,7 +107,6 @@ module.exports = function (app, db) {
                 const { id } = await db.oneOrNone(`select id from users where username = $1`, [username])
                 const userInfo = await db.manyOrNone(`select * from users where username = $1`, [username])
                 const playlist = await db.manyOrNone(`SELECT * from playlist WHERE user_id = $1`, [id]);
-                console.log(playlist);
                 res.json({
                     user: userInfo,
                     playlist
