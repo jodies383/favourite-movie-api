@@ -35,10 +35,10 @@ export function MovieApi() {
                     .get(`https://api.themoviedb.org/3/movie/popular?api_key=511ebf4540231b1f06e7bec72f6b4a05&language=en-US&page=1`)
                     .then((result) => {
                         const results = result.data.results
-                            this.searchResults = results
-                            this.movieSearch = true
-                            this.searchResLength = 'Trending movies'
-                           
+                        this.searchResults = results
+                        this.movieSearch = true
+                        this.searchResLength = 'Trending movies'
+
                     })
                 axios
                     .get(`${URL_BASE}/api/playlist/${username}`)
@@ -49,7 +49,7 @@ export function MovieApi() {
                             return axios
                                 .get(`https://api.themoviedb.org/3/movie/${element.movie_id}?api_key=511ebf4540231b1f06e7bec72f6b4a05`)
                                 .then((result) => {
-                                   
+
                                     return result.data
                                 }).catch(e => console.log(e))
 
@@ -123,6 +123,7 @@ export function MovieApi() {
                     } else {
                         const results = result.data
                         if (results.message == 'success') {
+                            location.reload()
                             const { token } = result.data;
                             localStorage.setItem('username', this.loginUsername);
                             localStorage.setItem('token', token);
@@ -134,6 +135,31 @@ export function MovieApi() {
 
                             this.user = localStorage.getItem('username')
                             axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
+                            axios
+                                .get(`https://api.themoviedb.org/3/movie/popular?api_key=511ebf4540231b1f06e7bec72f6b4a05&language=en-US&page=1`)
+                                .then((result) => {
+                                    const results = result.data.results
+                                    this.searchResults = results
+                                    this.movieSearch = true
+                                    this.searchResLength = 'Trending movies'
+
+                                })
+                            axios
+                                .get(`${URL_BASE}/api/playlist/${username}`)
+                                .then(async (result) => {
+                                    this.userInfo = result.data.user
+                                    let res = result.data.playlist
+                                    const movies = res.map(element => {
+                                        return axios
+                                            .get(`https://api.themoviedb.org/3/movie/${element.movie_id}?api_key=511ebf4540231b1f06e7bec72f6b4a05`)
+                                            .then((result) => {
+
+                                                return result.data
+                                            }).catch(e => console.log(e))
+
+                                    });
+                                    this.myMovies = await Promise.all(movies)
+                                });
                             axios
                                 .get(`${URL_BASE}/api/playlist/${username}`)
                                 .then(async (result) => {
