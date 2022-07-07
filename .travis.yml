@@ -2,11 +2,9 @@ language: node_js
 node_js:
 - 12
 env:
-- DATABASE_URL=postgresql://jodie@localhost:5432/movie_api
+- DATABASE_URL=postgresql://postgres@localhost:5432/movie_api
 before_script:
-- psql -c 'create user jodie;' -U postgres
 - psql -c 'create database movie_api;' -U postgres
-- psql -c 'GRANT ALL PRIVILEGES ON DATABASE movie_api TO jodie;' -U postgres
 - psql -U postgres -d movie_api -a -f server/sql/movie-api.sql
 services:
 - postgresql
