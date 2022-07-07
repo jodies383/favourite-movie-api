@@ -1,4 +1,4 @@
-[![Build Status](https://app.travis-ci.com/jodies383/movie-api.svg?branch=gh-pages)](https://app.travis-ci.com/jodies383/movie-api)
+[![Build Status](https://app.travis-ci.com/jodies383/movie-api.svg?branch=master)](https://app.travis-ci.com/jodies383/movie-api)
 
 ## In the movie api you can
 - create a new account
