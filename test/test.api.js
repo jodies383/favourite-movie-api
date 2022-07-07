@@ -23,7 +23,6 @@ describe('The Movie API', function () {
 	before(async function () {
 		this.timeout(5000);
 		await db.none(`delete from playlist`);
-		// await db.none(`delete from users`)
 	});
 
 
@@ -77,8 +76,8 @@ describe('The Movie API', function () {
 				password: '123'
 			});
 
-		const garments = response.body.message;
-		assert.equal('success', garments);
+		const { message } = response.body;
+		assert.equal('success', message);
 	});
 
 	it('should not log in when username and password do not match', async () => {
@@ -132,8 +131,8 @@ describe('The Movie API', function () {
 			.expect(200);
 
 
-		const garments = response.body.message;
-		assert.equal('duplicate', garments);
+		const { message } = response.body;
+		assert.equal('duplicate', message);
 
 	});
 
