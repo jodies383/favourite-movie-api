@@ -6,6 +6,7 @@ env:
 before_script:
 - psql -c 'create user jodie;' -U postgres
 - psql -c 'create database movie_api;' -U postgres
+- psql -c 'GRANT ALL PRIVILEGES ON DATABASE movie_api TO jodie;' -U postgres
 - psql -U postgres -d movie_api -a -f server/sql/movie-api.sql
 services:
 - postgresql
