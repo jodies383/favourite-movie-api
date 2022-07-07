@@ -3,6 +3,12 @@ module.exports = function (app, db) {
     const bcrypt = require('bcrypt');
     const saltRounds = 10;
 
+    app.get('/api/test', function (req, res) {
+		res.json({
+			name: 'joe'
+		});
+	});
+    
     function verifyToken(req, res, next) {
         const token = req.headers.authorization && req.headers.authorization.split(" ")[1];
         if (!req.headers.authorization || !token) {
