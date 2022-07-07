@@ -10,3 +10,4 @@ before_script:
 - psql -U postgres -d movie_api -a -f server/sql/movie-api.sql
 services:
 - postgresql
+
