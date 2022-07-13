@@ -24,6 +24,7 @@ describe('The Movie API', function () {
 		this.timeout(5000);
 		await db.none(`delete from playlist`);
 	});
+	let token
 
 
 	it('should have a test method', async () => {
@@ -75,7 +76,7 @@ describe('The Movie API', function () {
 				username: 'JoeSmith01',
 				password: '123'
 			});
-
+		token = response.body.token
 		const { message } = response.body;
 		assert.equal('success', message);
 	});
@@ -107,13 +108,13 @@ describe('The Movie API', function () {
 	it('should be able to add a new movie to favourites', async () => {
 		// change the code statement below
 
-		const token = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZVNtaXRoMDEiLCJpYXQiOjE2NTcxOTU1MDQsImV4cCI6MTY1NzIwOTkwNH0.5LES6GtV9_AhwDNlhXhJ5i59hAK8oaN4w1lk9kKXleU`
 		const response = await supertest(app)
 			.post('/api/playlist/JoeSmith01')
 			.set({ "Authorization": `Bearer ${token}` })
 			.send({ movieId: '4765' })
 			.expect(200);
 
+		console.log(token);
 		const { message } = response.body;
 		assert.equal('success', message);
 
@@ -122,7 +123,6 @@ describe('The Movie API', function () {
 	it('should not add a duplicate movie to favourites', async () => {
 		// change the code statement below
 
-		const token = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZVNtaXRoMDEiLCJpYXQiOjE2NTcxOTU1MDQsImV4cCI6MTY1NzIwOTkwNH0.5LES6GtV9_AhwDNlhXhJ5i59hAK8oaN4w1lk9kKXleU`
 		const response = await supertest(app)
 			.post('/api/playlist/JoeSmith01')
 			.set({ "Authorization": `Bearer ${token}` })
@@ -139,7 +139,6 @@ describe('The Movie API', function () {
 	it('should be able to find all the favourite movies for a user', async () => {
 		// add some code below
 
-		const token = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZVNtaXRoMDEiLCJpYXQiOjE2NTcxOTU1MDQsImV4cCI6MTY1NzIwOTkwNH0.5LES6GtV9_AhwDNlhXhJ5i59hAK8oaN4w1lk9kKXleU`
 		const response = await supertest(app)
 			.get('/api/playlist/JoeSmith01')
 			.set({ "Authorization": `Bearer ${token}` })
@@ -153,6 +152,7 @@ describe('The Movie API', function () {
 
 		const response = await supertest(app)
 			.delete(`/api/playlist?username=JoeSmith01&movie_id=4765`)
+			.set({ "Authorization": `Bearer ${token}` })
 			.expect(200);
 
 

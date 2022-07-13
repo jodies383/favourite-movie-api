@@ -125,7 +125,7 @@ module.exports = function (app, db) {
         }
     });
 
-    app.post('/api/playlist/:username', async function (req, res, next) {
+    app.post('/api/playlist/:username', verifyToken, async function (req, res, next) {
         try {
             const username = req.params.username
             const {movieId} = req.body
@@ -150,7 +150,7 @@ module.exports = function (app, db) {
             next()
         }
     });
-    app.delete('/api/playlist', async function (req, res, next) {
+    app.delete('/api/playlist',verifyToken, async function (req, res, next) {
         try {
 
             const username = req.query.username
