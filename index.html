@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/movie-api/assets/popcorn.9e110bc4.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <title>My Favourite Movies</title>
+  <script type="module" crossorigin src="/movie-api/assets/index.b034df51.js"></script>
+  <link rel="stylesheet" href="/movie-api/assets/index.b86d50d4.css">
+</head>
+
+<body x-data="movieApi" x-init="init()">
+  <header class="site-header">
+    <section>
+      <h1 class="title">
+        <img src="/movie-api/assets/popcorn.9e110bc4.svg" alt="" srcset="" style="width: 1em;">
+        <br>
+        my favourite movies
+      </h1>
+    </section>
+    <div class="d-flex justify-content-end logout container">
+      <button @click="logout()" class="btn btn-primary" x-show="logoutBtn">Logout</button>
+    </div>
+    <div class="d-flex justify-content-start user container">
+      <template x-for="user in userInfo">
+        <h3 x-show="logoutBtn">
+          <span class="material-symbols-outlined">
+            person
+            </span>
+          Hi,
+          <span x-text="user.first_name"></span>
+          <span x-text="user.last_name"></span>
+        </h3>
+      </template>
+    </div>
+  </header>
+  <div class="container">
+  </div>
+  <div class="container">
+    <p id="snackbar" class="error" x-ref="errorMessage" x-show="errorMessage"></p>
+    <p id="snackbar" class="success" x-ref="successMessage" x-show="successMessage"></p>
+
+    <div class="h-100 d-flex align-items-center justify-content-center">
+      <div class="container">
+        <form x-show="loginInput">
+          <div class="mb-3">
+            <h1>Login</h1>
+            <label for="username1" class="visually-hidden">Username</label>
+            <input type="username" x-model="loginUsername" class="form-control" id="username2" placeholder="Username">
+          </div>
+          <div class="mb-3">
+            <label for="exampleInputPassword1" class="visually-hidden">Password</label>
+            <input type="password" x-model="loginPassword" class="form-control" id="password2" placeholder="Password">
+          </div>
+          <button type="submit" @click="login()" x-bind:disabled="!loginUsername || !loginPassword"
+            class="btn btn-primary">Login</button>
+          <a href="#">
+            <h2 @click="hideLogin()" class="link-primary d-flex justify-content-center">or register here</h2>
+          </a>
+        </form>
+
+        <form x-show="registerInput">
+          <div class="mb-3">
+            <h1>Create an account</h1>
+            <label for="firstName" class="visually-hidden">First Name</label>
+            <input type="username" x-model="firstName" class="form-control" id="firstName" placeholder="First Name">
+          </div>
+          <div class="mb-3">
+            <label for="lastName" class="visually-hidden">Last Name</label>
+            <input type="username" x-model="lastName" class="form-control" id="lastName" placeholder="Last Name">
+          </div>
+          <div class="mb-3">
+            <label for="username1" class="visually-hidden">Username</label>
+            <input type="username" x-model="username" class="form-control" id="username1" placeholder="Username">
+          </div>
+          <div class="mb-3">
+            <label for="exampleInputPassword1" class="visually-hidden">Password</label>
+            <input type="password" x-model="password" class="form-control" id="password1" placeholder="Password">
+          </div>
+          <button type="submit" @click="register()" x-bind:disabled="!username || !password || !firstName || !lastName"
+            class="btn btn-primary">Register</button>
+          <a href="#">
+            <h2 @click="hideRegister()" class="link-primary d-flex justify-content-center">or login here</h2>
+          </a>
+        </form>
+      </div>
+    </div>
+    <div x-show="mainContent">
+      <div>
+        <div x-init="displayFavourites()" class="">
+          <h3 class="favs" x-on:click="hidePlaylist()">view your favourites
+            <template x-if="playlist">
+              <span class="material-symbols-outlined">
+                expand_less
+              </span>
+            </template>
+            <template x-if="!playlist">
+              <span class="material-symbols-outlined">
+                expand_more
+              </span>
+            </template>
+          </h3>
+          <div class="playlist container shadow" x-show="playlist">
+            <template x-for="movie in myMovies">
+              <div class="card movie_card" style="width: 10rem; background-color: #14181c;">
+                <img class="moviePoster card-img-top" :src="`https://image.tmdb.org/t/p/original/${movie.poster_path}`">
+                <div class="card-body">
+                    <i x-on:click="removeMovie(movie.id)" class=""><span class="material-symbols-outlined">
+                    heart_minus
+                    </span>
+                  </i>
+                  <div class="field">
+                    <b x-text="movie.title"></b>
+                  </div>
+                  <div class="field">
+                    <b x-text="movie.release_date.substr(0, 4)"></b>
+                  </div>
+                  <div class="field">
+                    <b x-text="movie.vote_average"></b>
+                    ★
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center">
+      </div>
+      <div class="h-100 d-flex align-items-center justify-content-center">
+        <h5 class="flex justify-center">search for a movie to add to your favourites</h5>
+      </div>
+      <div class="col-md-5 mx-auto">
+        <div class="input-group">
+          <input class="form-control border-end-0 border rounded-pill" x-model="searchInput" type="text" value="search"
+            id="example-search-input" x-on:keyup="searchMovies()" placeholder="search">
+         
+        </div>
+      </div>
+  
+      <div x-show="movieSearch">
+        <h3>
+          <span x-text="searchResLength"></span>
+        </h3>
+        <div class="movieResults">
+          <template x-for="result in searchResults">
+            <div class="card movie_card" style="width: 10rem; background-color: #14181c;">
+              <div class="">
+                <img class="moviePoster card-img-top" :src="`https://image.tmdb.org/t/p/original/${result.poster_path}`">
+                <div class="card-body">
+                  <a href="#" @click="addToFavourites(result.id)" class=""><span class="material-symbols-outlined">
+                    heart_plus
+                    </span></a>
+                  <div class="field">
+                    <b x-text="result.title"></b>
+                  </div>
+                  <div class="field">
+                    <b x-text="result.release_date.substr(0, 4)"></b>
+                  </div>
+                  <div class="field">
+                    <b x-text="result.vote_average"></b>
+                    ★
+                  </div>
+                
+                </div>
+  
+              </div>
+            </div>
+            </template>
+        </div>
+      </div>
+    </div>
+    <div class="footer fixed-bottom">
+<br>
+    </div>
+  </div>
+  <div id="app"></div>
+  <script defer src="https://unpkg.com/@alpinejs/persist@3.x.x/dist/cdn.min.js"></script>
+  
+</body>
+
+</html>
